@@ -1,0 +1,421 @@
+assignment 2:
+
+Q1: select branch_name from Loan;
+
+Q2: select loan_no from Loan where branch_name='Akurdi' and amount>12000;
+
+Q3: select Loan.loan_no, Borrower.cust_name, Loan.amount from Loan inner join Borrower on Loan.loan_no=Borrower.loan_no;
+
+Q4: select cust_name from Borrower where loan_no in (select loan_no from Loan where branch_name='Akurdi') order by cust_name;
+
+Q5: select cust_name from Depositor union select cust_name from Borrower;
+
+Q6: select cust_name from Borrower intersect select cust_name from Depositor;
+
+Q7: select cust_name from Depositor minus select cust_name from Borrower;
+
+Q8: select avg(balance) from Account where branch_name='Akurdi';
+
+Q9: select branch_name, avg(balance) from Account group by branch_name;
+
+Q10: select Account.branch_name, count(*) from
+     Account left join Depositor on account.acc_no=depositor.acc_no group by Account.branch_name;
+
+Q11: select branch_name, avg(balance) from Account group by branch_name having avg(balance)>12000;
+
+Q12: select count(*) from Customer;
+
+Q13: select sum(amount) from Loan;
+
+Q14: delete from Loan where amount>1300 and amount<1500;
+
+Q15: delete from Branch where branch_name='Nigdi';
+
+Q16: create synonym cust for customer;
+
+Q17: create table student(roll_no number(5), name varchar(20));
+     create sequence roll_seq start with 1 increment by 1;
+     alter table student modify roll_no default roll_seq.nextval;
+
+
+
+
+
+Assignment 3:
+
+Q1: SELECT add1,add2,state,city,pincode FROM add_dets WHERE code_no IN ( SELECT
+    cust_no from cust_mstr WHERE fname = 'xyz' AND lname = 'pqr');
+
+Q2: SELECT custno,fname,lname FROM cust_mstr WHERE cust_no IN (SELECT codeno
+    FROM acc_fd_cust_dets WHERE acc_fd_no IN (SELECT fd_sr_no FROM fd_dets    
+    WHERE amt > 5000));
+
+Q3: select emp_mstr.e_mpno, emp_mstr.f_name, emp_mstr.l_name, branch_mstr.name from
+    emp_mstr inner join branch_mstr on emp_mstr.branch_no=branch_mstr.b_no order by e_mpno;
+
+Q4: SELECT * FROM emp_mstr LEFT JOIN cntc_dets ON
+    emp_mstr.e_mpno=cntc_dets.code_no;
+    SELECT * FROM emp_mstr RIGHT JOIN cntc_dets ON
+    emp_mstr.e_mpno=cntc_dets.code_no;
+
+Q5: SELECT cust_no,fname,lname FROM cust_mstr WHERE cust_no NOT IN (SELECT
+    code_no FROM add_dets);
+
+Q6: CREATE VIEW Bor_1 AS SELECT b_no,name FROM Borrower WIT
+    H CHECK OPTION;
+    CREATE VIEW Dep_Bor AS SELECT Borrower.b_no,Borrower.name,Depositor.d_no
+    FROM Borrower JOIN Depositor ON Borrower.name=Depositor.name;
+
+
+
+
+
+Assignment 4:
+
+Q1: declare
+    mroll number(5);
+    matt number(3);
+    begin
+    mroll:=&roll;
+    select attendance into matt from stud where roll=mroll;
+    if matt<75 then
+    dbms_output.put_line(mroll||'Term not granted');
+    update stud set status='D' where roll=mroll;
+    else
+    dbms_output.put_line(mroll||'Term granted');
+    update stud set status='ND' where roll=mroll;
+    end if;
+    exception
+    when no_data_found then
+    dbms_output.put_line('Roll number not found.');
+    end;
+
+Q2: declare
+    not_enough_balance exception;
+    macc number(10);
+    mbalance number(5);
+    amount number(5);
+    begin
+    macc:=&accno;
+    amount:=&amount;
+    select balance into mbalance from accmstr where accno=macc;
+    if amount>mbalance then
+    raise not_enough_balance;
+    else
+    update accmstr set balance=mbalance-amount where accno=macc;
+    end if;
+    exception
+    when no_data_found then
+    DBMS_OUTPUT.PUT_LINE('Account number not found.');
+    when not_enough_balance then
+    DBMS_OUTPUT.PUT_LINE('Not enough balance.');
+    end;
+
+Q3: declare
+    br exception;
+    mid number(5);
+    mbal number(5);
+    begin
+    mid:=&emp_id;
+    select balance into mbal from empdets where eid=mid;
+    if mbal<0 then
+    update empdets set balance=69 where eid=mid;
+    raise br;
+    end if;
+    exception
+    when no_data_found then
+    dbms_output.put_line('Employee not found.');
+    when br then
+    dbms_output.put_line('Voilates bussiness rule.');
+    end;
+
+Q4: declare
+    book_name varchar(20);
+    mroll number(5);
+    dateofissue Date;
+    days number(3);
+    amount number(4);
+    begin
+    mroll:=&roll;
+    book_name:='&book_name';
+    select date_issue into dateofissue from borrower where roll=mroll and book=book_name;
+    days:=sysdate-dateofissue;
+    if days<15 then
+    update borrower set status='R' where roll=mroll and book=book_name;
+    else if days<=30 then
+    amount:=days*5;
+    update borrower set status='R' where roll=mroll and book=book_name;
+    insert into fine values(mroll,SYSDATE,amount);
+    else
+    amount:=days*50;
+    update borrower set status='R' where roll=mroll and book=book_name;
+    insert into fine values(mroll,SYSDATE,amount);
+    end if;
+    end if;
+    exception
+    when no_data_found then
+    dbms_output.put_line('Data not found.');
+    end;
+
+
+
+
+
+Assignment 5:
+
+Q1: declare
+    book_name varchar(20);
+    mroll number(5);
+    begin
+    mroll:=&roll;
+    book_name:='&book_name';
+    fine_proc(mroll,book_name);
+    end;
+    
+    create or replace procedure fine_proc(mroll in number, book_name in varchar) as
+    days number(3);
+    amount number(4);
+    dateofissue date;
+    begin
+    select date_issue into dateofissue from borrower where roll=mroll and book=book_name;
+    days:=sysdate-dateofissue;
+    if days<15 then
+    update borrower set status='R' where roll=mroll and book=book_name;
+    else if days<=30 then
+    amount:=days*5;
+    update borrower set status='R' where roll=mroll and book=book_name;
+    insert into fine values(mroll,SYSDATE,amount);
+    else
+    amount:=days*50;
+    update borrower set status='R' where roll=mroll and book=book_name;
+    insert into fine values(mroll,SYSDATE,amount);
+    end if;
+    end if;
+    end;
+
+Q2: declare
+    acc_no number(5);
+    branch varchar(20);
+    temp varchar(50);
+    begin
+    acc_no:=&Account_number;
+    branch:='&branch';
+    temp:=bank_func(acc_no,branch);
+    dbms_output.put_line(temp);
+    exception
+    when others then
+    dbms_output.put_line('Somethin went wrong');
+    end;
+
+    create or replace function bank_func(acc_no in number, branch in varchar)
+    return varchar is
+    temp varchar(30);
+    s varchar(10);
+    begin
+    select status into s from account where accno=acc_no and bra=branch;
+    if s='Active' then
+    temp:='Account is active.';
+    insert into active_acc_details values(acc_no,branch);
+    else
+    temp:='Account is inactive.';
+    end if;
+    return temp;
+    exception
+    when others then
+    dbms_output.put_line('something went wrong.');
+    temp:='';
+    return temp;
+    end;
+
+Q3: CREATE OR REPLACE PROCEDURE proc_Grade (roll_no IN NUMBER)
+    AS
+    marks NUMBER;
+    BEGIN
+    SELECT total_marks INTO marks FROM Stud_Marks WHERE name IN (SELECT
+    Name FROM Result WHERE Roll=roll_no);
+    IF marks >= 990 AND marks <= 1500 THEN
+    DBMS_OUTPUT.PUT_LINE( 'Roll number ' || roll_no || ' is in Distinction category');
+    ElsIF marks >= 900 THEN
+    DBMS_OUTPUT.PUT_LINE( 'Roll number ' || roll_no || ' is in First Class category');
+    ElsIf marks >= 825 Then
+    DBMS_OUTPUT.PUT_LINE( 'Roll number ' || roll_no || ' is in Higher Second Class
+    category');
+    END IF;
+    EXCEPTION
+    WHEN no_data_found THEN
+    DBMS_OUTPUT.PUT_LINE('Enter a valid roll number');
+    WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('ERROR!');
+    END;
+
+    DECLARE
+    roll NUMBER;
+    BEGIN
+    roll := &Roll_number;
+    proc_Grade (roll);
+    END;
+
+Assignment 6:
+
+Q1: declare
+    ans number(2);
+    begin
+    update account set status='Active' where status='Inactive';
+    ans:=sql%rowcount;
+    dbms_output.put_line(ans || ' account are made active.');
+    exception
+    when others then
+    dbms_output.put_line('Something went wrong.');
+    end;
+
+Q2: declare
+    cursor sal is select eno, salary from empdets;
+    eid number(5);
+    s number(5);
+    avg_sal number(5);
+    begin
+    select avg(salary) into avg_sal from empdets;
+    open sal;
+    loop
+    fetch sal into eid, s;
+    exit when sal%notfound;
+    if s<avg_sal then
+    update empdets set salary=s*1.1 where eno=eid;
+    insert into inc_table values(eid,s*1.1);
+    end if;
+    end loop;
+    close sal;
+    exception
+    when others then
+    dbms_output.put_line('Somethin went wrong');
+    end;
+
+Q3: DECLARE
+    Stud_att stud19.att%type;
+    Stud_roll stud19.roll%type;
+    CURSOR c IS SELECT roll,att FROM stud19;
+    BEGIN
+    OPEN c;
+    LOOP
+    FETCH c INTO Stud_roll,Stud_att;
+    EXIT WHEN c%NOTFOUND;
+    IF (Stud_att < 75) THEN
+    UPDATE stud19 SET status = 'D' WHERE roll = Stud_roll;
+    INSERT INTO d_stud VALUES (Stud_roll,Stud_att);
+    END IF;
+    END LOOP;
+    CLOSE c;
+    END;
+
+Q4: declare
+    cursor old is select * from old_stud;
+    cursor new(roll1 number) is select roll from new_stud where roll=roll1;
+    r number(5);
+    v old_stud%rowtype;
+    begin
+    open old;
+    loop
+    fetch old into v;
+    exit when old%notfound;
+    open new(v.roll);
+    fetch new into r;
+    if new%notfound then
+    insert into new_stud values(v.roll,v.name);
+    end if;
+    close new;
+    end loop;
+    close old;
+    exception
+    when others then
+    dbms_output.put_line('Something went wrong.');
+    end;
+
+Q5: declare
+    dno number(5);
+    avg_sal number(5);
+    cursor a is select dno from empdets;
+    cursor b(d number) is select avg(salary) from empdets where dno=d;
+    cursor c(d number) is select salary from dept_avg where dno=d;
+    begin
+    open a;
+    loop
+    fetch a into dno;
+    exit when a%notfound;
+    open b(dno);
+    fetch b into avg_sal;
+    open c(dno);
+    fetch c into avg_sal;
+    if c%notfound then
+    insert into dept_avg values(dno,avg_sal);
+    end if;
+    close c;
+    close b;
+    end loop;
+    close a;
+    exception
+    when others then
+    dbms_output.put_line('Something went wrong');
+    end;
+
+Q6: declare
+    cursor a is select roll,attendance from stud;
+    begin
+    for demo in a
+    loop
+    if demo.attendance<75 then
+    update stud set status='D' where roll=demo.roll;
+    insert into detained values(demo.roll,demo.attendance);
+    else
+    update stud set status='ND' where roll=demo.roll;
+    end if;
+    end loop;
+    exception
+    when others then
+    dbms_output.put_line('Something went wrong');
+    end;
+
+
+
+
+
+Assignment 7:
+
+Q1: create or replace trigger change after update or delete on clienmstr for each row
+    declare
+    op varchar(10);
+    begin
+    if updating then
+    op:='updated';
+    end if;
+    if deleting then
+    op:='deleted';
+    end if;
+    insert into audit_table values(:old.eno,op);
+    exception
+    when others then
+    dbms_output.put_line('Something went wrong');
+    end;
+
+Q2: create or replace trigger t before insert or update on emp for each row
+    declare
+    begin
+    if :new.salary>50000 then
+    insert into tracking values(:new.eno,:new.salary);
+    end if;
+    if :new.salary<50000 then
+    raise_application_error(-20003,'Salary value should not be less than 50000');
+    end if;
+    end;
+
+Q3: Create or replace trigger emp_salary2 before insert or update on emp77
+    for each row
+    Declare
+    total_sal DECIMAL(10, 2);
+    avg1_sal DECIMAL(10, 2);
+    Begin
+    total_sal := :NEW.sal1 + :NEW.sal2 + :NEW.sal3;
+    avg1_sal := total_sal / 3;
+    if (:new.sal1<=50000 or :new.sal2<=50000 or :new.sal3<=50000) then 
+    insert into emp_new values(:new.emp_no,avg1_sal);
+    end if;
+    End;
